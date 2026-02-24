@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>方块大暴走 V4 - 贺岁暴富版</title>
+    <title>汪军专用版俄罗斯方块</title>
     <style>
         :root {
-            --bg-color: #1a0505; /* 暗红色背景 */
+            --bg-color: #1a0505;
             --panel-bg: rgba(40, 10, 10, 0.9);
-            --neon-border: #ffd700; /* 土豪金边框 */
+            --neon-border: #ffd700;
         }
         body {
             background-color: var(--bg-color);
@@ -72,6 +72,9 @@
             padding: 10px;
             text-align: center;
             box-shadow: inset 0 0 10px rgba(255,215,0,0.2);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         .info-box h3 {
@@ -85,6 +88,7 @@
             font-weight: bold;
             color: #ffd700;
             text-shadow: 0 0 5px #ffd700;
+            word-break: break-all;
         }
 
         #rage-container {
@@ -98,13 +102,14 @@
             justify-content: flex-end;
             overflow: hidden;
             box-shadow: 0 0 10px rgba(255,0,0,0.8);
+            min-height: 50px;
         }
 
         #rage-bar {
             background: linear-gradient(to top, #ff0000, #ffd700);
             height: 0%;
             width: 100%;
-            transition: height 0.3s;
+            transition: height 0.3s, width 0.3s;
         }
 
         #nuke-btn {
@@ -115,13 +120,15 @@
             background: linear-gradient(45deg, #ff0000, #ffaa00);
             color: #fff;
             border: 2px solid #ffd700;
-            padding: 10px;
+            padding: 8px;
+            font-size: 0.9rem;
             font-weight: bold;
             border-radius: 5px;
             cursor: pointer;
             display: none;
             box-shadow: 0 0 15px #ffd700;
             animation: pulse 0.6s infinite;
+            z-index: 10;
         }
 
         .nuke-ready #nuke-btn { display: block; }
@@ -132,7 +139,6 @@
             100% { transform: translate(-50%, -50%) scale(1); }
         }
 
-        /* 贺岁祝福语浮动特效 */
         .blessing-text {
             position: absolute;
             color: #ffd700;
@@ -155,7 +161,7 @@
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 10px;
-            margin-top: 15px;
+            margin-top: 10px;
             width: 90vw;
             max-width: 350px;
         }
@@ -165,20 +171,33 @@
             border: 1px solid #ffd700;
             color: #ffd700;
             font-size: 1.5rem;
-            padding: 15px;
+            padding: 15px 0;
             border-radius: 10px;
             text-align: center;
             user-select: none;
         }
         .control-btn:active { background: rgba(255, 215, 0, 0.4); }
 
+        #btn-left { grid-column: 1; grid-row: 1; }
+        #btn-rotate { grid-column: 2; grid-row: 1; }
+        #btn-right { grid-column: 3; grid-row: 1; }
+        #btn-down { 
+            grid-column: 2; 
+            grid-row: 2; 
+            background: rgba(255, 0, 0, 0.2);
+            border-color: #ff5555;
+        }
+
         @media (max-width: 600px) {
-            #main-wrapper { flex-direction: column; align-items: center; }
-            #ui-panel { flex-direction: row; width: 100%; justify-content: space-between; height: 60px; }
-            #rage-container { width: 30%; height: auto; flex-direction: row; }
+            #main-wrapper { flex-direction: column; align-items: center; gap: 8px; padding: 5px; }
+            #ui-panel { flex-direction: row; width: 95%; justify-content: space-between; height: auto; gap: 5px; }
+            .info-box { padding: 5px; flex: 1; }
+            .info-box h3 { font-size: 0.8rem; margin-bottom: 2px; }
+            .info-box span { font-size: 1rem; }
+            #rage-container { flex: 1; height: auto; flex-direction: row; }
             #rage-bar { height: 100%; width: 0%; background: linear-gradient(to right, #ff0000, #ffd700); }
-            canvas { max-width: 100vw; height: 50vh; }
-            h1 { font-size: 1.2rem; }
+            canvas { max-width: 95vw; height: 50vh; }
+            h1 { font-size: 1.2rem; margin: 5px 0; }
         }
         @media (min-width: 601px) {
             #mobile-controls { display: none; }
@@ -187,7 +206,7 @@
 </head>
 <body>
 
-<h1>🏮 贺岁暴走 V4 🏮</h1>
+<h1>🏮 汪军专用版俄罗斯方块 🏮</h1>
 
 <div id="main-wrapper">
     <canvas id="board" width="300" height="600"></canvas>
@@ -212,8 +231,7 @@
     <div class="control-btn" id="btn-left">⬅️</div>
     <div class="control-btn" id="btn-rotate">🔃</div>
     <div class="control-btn" id="btn-right">➡️</div>
-    <div class="control-btn" style="visibility: hidden;"></div>
-    <div class="control-btn" id="btn-down">⬇️</div>
+    <div class="control-btn" id="btn-down">⏬</div>
 </div>
 
 <script>
@@ -238,8 +256,7 @@
         [[7,7,0],[0,7,7],[0,0,0]]                 
     ];
 
-    // 贺岁词库
-    const BLESSINGS = ["暴富!", "发财!", "大吉大利!", "岁岁平安!", "财源滚滚!", "好运连连!", "升职加薪!", "爆金币啦!"];
+    const BLESSINGS = ["暴富!", "发财!", "大吉大利!", "岁岁平安!", "财源滚滚!", "好运连连!", "汪总牛逼!", "汪军发大财!"];
 
     let board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
     let score = 0;
@@ -251,8 +268,6 @@
     let dropCounter = 0;
     let dropInterval = 1000; 
     let lastTime = 0;
-
-    // 粒子烟花系统
     let particles = [];
 
     function createFireworks(yPos) {
@@ -260,10 +275,9 @@
             particles.push({
                 x: Math.random() * canvas.width,
                 y: yPos * BLOCK_SIZE + (BLOCK_SIZE / 2),
-                vx: (Math.random() - 0.5) * 15, // 水平爆炸扩散
-                vy: (Math.random() - 1) * 15,   // 向上爆发
+                vx: (Math.random() - 0.5) * 15, 
+                vy: (Math.random() - 1) * 15,   
                 life: 1,
-                // 随机生成过年红黄配色
                 color: Math.random() > 0.4 ? '#ffd700' : '#ff0000'
             });
         }
@@ -281,21 +295,19 @@
             
             p.x += p.vx;
             p.y += p.vy;
-            p.vy += 0.5; // 重力下坠
-            p.life -= 0.03; // 生命周期衰减
+            p.vy += 0.5; 
+            p.life -= 0.03; 
             
             if (p.life <= 0) particles.splice(i, 1);
         }
     }
 
-    // 浮动恭祝词系统
     function showBlessing(yPos) {
         const rect = canvas.getBoundingClientRect();
         const text = document.createElement('div');
         text.className = 'blessing-text';
         text.innerText = BLESSINGS[Math.floor(Math.random() * BLESSINGS.length)];
         
-        // 计算在屏幕上的绝对位置 (居中且位于消除行附近)
         const absoluteX = rect.left + (rect.width / 2);
         const absoluteY = rect.top + (yPos * (rect.height / ROWS));
         
@@ -303,8 +315,6 @@
         text.style.top = absoluteY + 'px';
         
         document.body.appendChild(text);
-        
-        // 动画结束后移除 DOM
         setTimeout(() => text.remove(), 1200);
     }
 
@@ -336,10 +346,13 @@
         ctx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
     }
 
+    // 已移除虚影绘制逻辑，恢复为普通绘制函数
     function drawMatrix(matrix, offset) {
         matrix.forEach((row, y) => {
             row.forEach((value, x) => {
-                if (value !== 0) drawBlock(x + offset.x, y + offset.y, COLORS[value]);
+                if (value !== 0) {
+                    drawBlock(x + offset.x, y + offset.y, COLORS[value]);
+                }
             });
         });
     }
@@ -348,15 +361,18 @@
         ctx.fillStyle = 'rgba(20, 0, 0, 1)'; 
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         drawMatrix(board, {x: 0, y: 0});
+        
+        // 虚影计算和绘制代码已移除
+        
         drawMatrix(piece.matrix, {x: piece.x, y: piece.y});
-        drawParticles(); // 绘制烟花
+        drawParticles(); 
     }
 
-    function collide(board, piece) {
-        const m = piece.matrix;
+    function collide(board, testPiece) {
+        const m = testPiece.matrix;
         for (let y = 0; y < m.length; ++y) {
             for (let x = 0; x < m[y].length; ++x) {
-                if (m[y][x] !== 0 && (board[y + piece.y] && board[y + piece.y][x + piece.x]) !== 0) {
+                if (m[y][x] !== 0 && (board[y + testPiece.y] && board[y + testPiece.y][x + testPiece.x]) !== 0) {
                     return true;
                 }
             }
@@ -398,6 +414,17 @@
         dropCounter = 0;
     }
 
+    function playerHardDrop() {
+        while (!collide(board, piece)) {
+            piece.y++;
+        }
+        piece.y--; 
+        merge(board, piece);
+        spawnPiece();
+        sweep();
+        dropCounter = 0;
+    }
+
     function playerRotate(dir) {
         const pos = piece.x;
         let offset = 1;
@@ -421,7 +448,7 @@
     function sweep() {
         let rowCount = 1;
         let linesCleared = 0;
-        let lowestY = 0; // 记录消除的最低行，用于放烟花
+        let lowestY = 0; 
 
         outer: for (let y = ROWS - 1; y >= 0; --y) {
             for (let x = 0; x < COLS; ++x) {
@@ -430,11 +457,11 @@
             const row = board.splice(y, 1)[0].fill(0);
             board.unshift(row);
             
-            if (y > lowestY) lowestY = y; // 记录爆炸位置
+            if (y > lowestY) lowestY = y; 
             ++y;
 
             let currentMultiplier = (1000 / dropInterval);
-            score += Math.floor(rowCount * 88 * currentMultiplier); // 得分基数变成吉利的 88
+            score += Math.floor(rowCount * 88 * currentMultiplier); 
             rowCount *= 2;
             linesCleared++;
         }
@@ -443,7 +470,6 @@
             totalLines += linesCleared;
             updateSpeed();
             
-            // 触发视觉特效！
             createFireworks(lowestY);
             showBlessing(lowestY);
 
@@ -462,7 +488,6 @@
         document.body.classList.add('nuke-flash');
         setTimeout(() => document.body.classList.remove('nuke-flash'), 500);
 
-        // 全屏放烟花！
         for(let i=0; i<ROWS; i+=4) createFireworks(i);
         showBlessing(ROWS/2);
         showBlessing(ROWS/2 - 2);
@@ -498,7 +523,7 @@
         const deltaTime = time - lastTime;
         lastTime = time;
         dropCounter += deltaTime;
-        if (dropCounter > dropInterval) playerDrop();
+        if (dropCounter > dropInterval) playerDrop(); 
         
         draw();
         requestAnimationFrame(update);
@@ -507,7 +532,7 @@
     document.addEventListener('keydown', event => {
         if (event.keyCode === 37) playerMove(-1);      
         else if (event.keyCode === 39) playerMove(1);  
-        else if (event.keyCode === 40) playerDrop();   
+        else if (event.keyCode === 40) playerHardDrop(); 
         else if (event.keyCode === 38) playerRotate(1);
         else if (event.keyCode === 32) {               
             event.preventDefault(); 
@@ -521,8 +546,8 @@
     };
     bindTouch('btn-left', () => playerMove(-1));
     bindTouch('btn-right', () => playerMove(1));
-    bindTouch('btn-down', () => playerDrop());
     bindTouch('btn-rotate', () => playerRotate(1));
+    bindTouch('btn-down', () => playerHardDrop());
 
     window.addEventListener('resize', updateUI);
 
