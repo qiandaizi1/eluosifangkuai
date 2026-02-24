@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>方块大暴走 V4 - 贺岁暴富版</title>
+    <style>
+        :root {
+            --bg-color: #1a0505; /* 暗红色背景 */
+            --panel-bg: rgba(40, 10, 10, 0.9);
+            --neon-border: #ffd700; /* 土豪金边框 */
+        }
+        body {
+            background-color: var(--bg-color);
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            touch-action: none;
+        }
+        
+        body.nuke-flash {
+            animation: flash 0.5s ease-out;
+        }
+        @keyframes flash {
+            0% { background-color: #ffd700; }
+            50% { background-color: #ff0000; }
+            100% { background-color: var(--bg-color); }
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin: 10px 0;
+            text-shadow: 0 0 10px #ff0000, 0 0 20px #ffd700;
+            color: #ffd700;
+        }
+
+        #main-wrapper {
+            display: flex;
+            flex-direction: row;
+            gap: 15px;
+            padding: 10px;
+            max-width: 100vw;
+        }
+
+        canvas {
+            background: rgba(20, 0, 0, 0.8);
+            border: 2px solid var(--neon-border);
+            box-shadow: 0 0 15px #ff0000;
+            border-radius: 5px;
+            max-width: 60vw;
+            height: auto;
+            aspect-ratio: 1 / 2;
+            position: relative;
+        }
+
+        #ui-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 120px;
+        }
+
+        .info-box {
+            background: var(--panel-bg);
+            border: 1px solid #ffd700;
+            border-radius: 5px;
+            padding: 10px;
+            text-align: center;
+            box-shadow: inset 0 0 10px rgba(255,215,0,0.2);
+        }
+
+        .info-box h3 {
+            margin: 0 0 5px 0;
+            font-size: 0.9rem;
+            color: #ffaa00;
+        }
+
+        .info-box span {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 0 0 5px #ffd700;
+        }
+
+        #rage-container {
+            flex-grow: 1;
+            border: 2px solid #ffd700;
+            background: #300;
+            border-radius: 5px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(255,0,0,0.8);
+        }
+
+        #rage-bar {
+            background: linear-gradient(to top, #ff0000, #ffd700);
+            height: 0%;
+            width: 100%;
+            transition: height 0.3s;
+        }
+
+        #nuke-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(45deg, #ff0000, #ffaa00);
+            color: #fff;
+            border: 2px solid #ffd700;
+            padding: 10px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            display: none;
+            box-shadow: 0 0 15px #ffd700;
+            animation: pulse 0.6s infinite;
+        }
+
+        .nuke-ready #nuke-btn { display: block; }
+        
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.15); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* 贺岁祝福语浮动特效 */
+        .blessing-text {
+            position: absolute;
+            color: #ffd700;
+            font-size: 28px;
+            font-weight: 900;
+            text-shadow: 2px 2px 0 #d00, -2px -2px 0 #d00, 2px -2px 0 #d00, -2px 2px 0 #d00, 0 0 15px #ff0;
+            pointer-events: none;
+            z-index: 1000;
+            animation: floatUpWord 1.2s ease-out forwards;
+        }
+
+        @keyframes floatUpWord {
+            0% { transform: translate(-50%, 0) scale(0.2); opacity: 0; }
+            20% { transform: translate(-50%, -30px) scale(1.2); opacity: 1; }
+            80% { transform: translate(-50%, -80px) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -100px) scale(1); opacity: 0; }
+        }
+
+        #mobile-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+            width: 90vw;
+            max-width: 350px;
+        }
+
+        .control-btn {
+            background: rgba(255, 215, 0, 0.15);
+            border: 1px solid #ffd700;
+            color: #ffd700;
+            font-size: 1.5rem;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            user-select: none;
+        }
+        .control-btn:active { background: rgba(255, 215, 0, 0.4); }
+
+        @media (max-width: 600px) {
+            #main-wrapper { flex-direction: column; align-items: center; }
+            #ui-panel { flex-direction: row; width: 100%; justify-content: space-between; height: 60px; }
+            #rage-container { width: 30%; height: auto; flex-direction: row; }
+            #rage-bar { height: 100%; width: 0%; background: linear-gradient(to right, #ff0000, #ffd700); }
+            canvas { max-width: 100vw; height: 50vh; }
+            h1 { font-size: 1.2rem; }
+        }
+        @media (min-width: 601px) {
+            #mobile-controls { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<h1>🏮 贺岁暴走 V4 🏮</h1>
+
+<div id="main-wrapper">
+    <canvas id="board" width="300" height="600"></canvas>
+    
+    <div id="ui-panel">
+        <div class="info-box">
+            <h3>铜钱(分)</h3>
+            <span id="score">0</span>
+        </div>
+        <div class="info-box">
+            <h3>时速</h3>
+            <span id="speed-display" style="color:#ff0000; text-shadow:0 0 5px #ffd700;">100%</span>
+        </div>
+        <div id="rage-container">
+            <button id="nuke-btn" onclick="triggerNuke()">暴富<br>SPACE</button>
+            <div id="rage-bar"></div>
+        </div>
+    </div>
+</div>
+
+<div id="mobile-controls">
+    <div class="control-btn" id="btn-left">⬅️</div>
+    <div class="control-btn" id="btn-rotate">🔃</div>
+    <div class="control-btn" id="btn-right">➡️</div>
+    <div class="control-btn" style="visibility: hidden;"></div>
+    <div class="control-btn" id="btn-down">⬇️</div>
+</div>
+
+<script>
+    const canvas = document.getElementById('board');
+    const ctx = canvas.getContext('2d');
+    const ROWS = 20;
+    const COLS = 10;
+    const BLOCK_SIZE = 30;
+
+    const COLORS = [
+        null, '#00ffff', '#0055ff', '#ffaa00', '#ffff00', '#00ff00', '#ff00ff', '#ff0000'
+    ];
+
+    const SHAPES = [
+        [],
+        [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]], 
+        [[2,0,0],[2,2,2],[0,0,0]],                
+        [[0,0,3],[3,3,3],[0,0,0]],                
+        [[4,4],[4,4]],                            
+        [[0,5,5],[5,5,0],[0,0,0]],                
+        [[0,6,0],[6,6,6],[0,0,0]],                
+        [[7,7,0],[0,7,7],[0,0,0]]                 
+    ];
+
+    // 贺岁词库
+    const BLESSINGS = ["暴富!", "发财!", "大吉大利!", "岁岁平安!", "财源滚滚!", "好运连连!", "升职加薪!", "爆金币啦!"];
+
+    let board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
+    let score = 0;
+    let totalLines = 0; 
+    let rage = 0;
+    const MAX_RAGE = 100;
+
+    let piece = { matrix: [], x: 0, y: 0 };
+    let dropCounter = 0;
+    let dropInterval = 1000; 
+    let lastTime = 0;
+
+    // 粒子烟花系统
+    let particles = [];
+
+    function createFireworks(yPos) {
+        for (let i = 0; i < 40; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: yPos * BLOCK_SIZE + (BLOCK_SIZE / 2),
+                vx: (Math.random() - 0.5) * 15, // 水平爆炸扩散
+                vy: (Math.random() - 1) * 15,   // 向上爆发
+                life: 1,
+                // 随机生成过年红黄配色
+                color: Math.random() > 0.4 ? '#ffd700' : '#ff0000'
+            });
+        }
+    }
+
+    function drawParticles() {
+        for (let i = particles.length - 1; i >= 0; i--) {
+            let p = particles[i];
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = p.life;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, Math.random() * 3 + 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
+            
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.5; // 重力下坠
+            p.life -= 0.03; // 生命周期衰减
+            
+            if (p.life <= 0) particles.splice(i, 1);
+        }
+    }
+
+    // 浮动恭祝词系统
+    function showBlessing(yPos) {
+        const rect = canvas.getBoundingClientRect();
+        const text = document.createElement('div');
+        text.className = 'blessing-text';
+        text.innerText = BLESSINGS[Math.floor(Math.random() * BLESSINGS.length)];
+        
+        // 计算在屏幕上的绝对位置 (居中且位于消除行附近)
+        const absoluteX = rect.left + (rect.width / 2);
+        const absoluteY = rect.top + (yPos * (rect.height / ROWS));
+        
+        text.style.left = absoluteX + 'px';
+        text.style.top = absoluteY + 'px';
+        
+        document.body.appendChild(text);
+        
+        // 动画结束后移除 DOM
+        setTimeout(() => text.remove(), 1200);
+    }
+
+    function resetGame() {
+        board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
+        score = 0;
+        totalLines = 0;
+        rage = 0;
+        particles = [];
+        updateSpeed();
+        updateUI();
+    }
+
+    function spawnPiece() {
+        const typeId = Math.floor(Math.random() * 7) + 1;
+        piece.matrix = SHAPES[typeId];
+        piece.y = 0;
+        piece.x = Math.floor(COLS / 2) - Math.floor(piece.matrix[0].length / 2);
+        if (collide(board, piece)) resetGame(); 
+    }
+
+    function drawBlock(x, y, color) {
+        ctx.fillStyle = color;
+        ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.fillRect(x * BLOCK_SIZE + 2, y * BLOCK_SIZE + 2, BLOCK_SIZE - 4, BLOCK_SIZE - 4);
+        ctx.strokeStyle = '#220000';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+    }
+
+    function drawMatrix(matrix, offset) {
+        matrix.forEach((row, y) => {
+            row.forEach((value, x) => {
+                if (value !== 0) drawBlock(x + offset.x, y + offset.y, COLORS[value]);
+            });
+        });
+    }
+
+    function draw() {
+        ctx.fillStyle = 'rgba(20, 0, 0, 1)'; 
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        drawMatrix(board, {x: 0, y: 0});
+        drawMatrix(piece.matrix, {x: piece.x, y: piece.y});
+        drawParticles(); // 绘制烟花
+    }
+
+    function collide(board, piece) {
+        const m = piece.matrix;
+        for (let y = 0; y < m.length; ++y) {
+            for (let x = 0; x < m[y].length; ++x) {
+                if (m[y][x] !== 0 && (board[y + piece.y] && board[y + piece.y][x + piece.x]) !== 0) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    function merge(board, piece) {
+        piece.matrix.forEach((row, y) => {
+            row.forEach((value, x) => {
+                if (value !== 0) board[y + piece.y][x + piece.x] = value;
+            });
+        });
+    }
+
+    function rotate(matrix, dir) {
+        for (let y = 0; y < matrix.length; ++y) {
+            for (let x = 0; x < y; ++x) {
+                [matrix[x][y], matrix[y][x]] = [matrix[y][x], matrix[x][y]];
+            }
+        }
+        if (dir > 0) matrix.forEach(row => row.reverse());
+        else matrix.reverse();
+    }
+
+    function playerMove(dir) {
+        piece.x += dir;
+        if (collide(board, piece)) piece.x -= dir;
+    }
+
+    function playerDrop() {
+        piece.y++;
+        if (collide(board, piece)) {
+            piece.y--;
+            merge(board, piece);
+            spawnPiece();
+            sweep();
+        }
+        dropCounter = 0;
+    }
+
+    function playerRotate(dir) {
+        const pos = piece.x;
+        let offset = 1;
+        rotate(piece.matrix, dir);
+        while (collide(board, piece)) {
+            piece.x += offset;
+            offset = -(offset + (offset > 0 ? 1 : -1));
+            if (offset > piece.matrix[0].length) {
+                rotate(piece.matrix, -dir);
+                piece.x = pos;
+                return;
+            }
+        }
+    }
+
+    function updateSpeed() {
+        let speedBoosts = Math.floor(totalLines / 5);
+        dropInterval = Math.max(16, 1000 * Math.pow(0.95, speedBoosts));
+    }
+
+    function sweep() {
+        let rowCount = 1;
+        let linesCleared = 0;
+        let lowestY = 0; // 记录消除的最低行，用于放烟花
+
+        outer: for (let y = ROWS - 1; y >= 0; --y) {
+            for (let x = 0; x < COLS; ++x) {
+                if (board[y][x] === 0) continue outer;
+            }
+            const row = board.splice(y, 1)[0].fill(0);
+            board.unshift(row);
+            
+            if (y > lowestY) lowestY = y; // 记录爆炸位置
+            ++y;
+
+            let currentMultiplier = (1000 / dropInterval);
+            score += Math.floor(rowCount * 88 * currentMultiplier); // 得分基数变成吉利的 88
+            rowCount *= 2;
+            linesCleared++;
+        }
+
+        if (linesCleared > 0) {
+            totalLines += linesCleared;
+            updateSpeed();
+            
+            // 触发视觉特效！
+            createFireworks(lowestY);
+            showBlessing(lowestY);
+
+            rage += linesCleared * 20; 
+            if (rage >= MAX_RAGE) {
+                rage = MAX_RAGE;
+                document.getElementById('rage-container').classList.add('nuke-ready');
+            }
+            updateUI();
+        }
+    }
+
+    function triggerNuke() {
+        if (rage < MAX_RAGE) return;
+        
+        document.body.classList.add('nuke-flash');
+        setTimeout(() => document.body.classList.remove('nuke-flash'), 500);
+
+        // 全屏放烟花！
+        for(let i=0; i<ROWS; i+=4) createFireworks(i);
+        showBlessing(ROWS/2);
+        showBlessing(ROWS/2 - 2);
+        showBlessing(ROWS/2 + 2);
+
+        for (let r = 0; r < ROWS; r++) board[r].fill(0);
+
+        let currentMultiplier = (1000 / dropInterval);
+        score += Math.floor(8888 * currentMultiplier);
+        
+        rage = 0;
+        document.getElementById('rage-container').classList.remove('nuke-ready');
+        updateUI();
+    }
+
+    function updateUI() {
+        document.getElementById('score').innerText = score;
+        
+        let currentSpeedPct = Math.floor((1000 / dropInterval) * 100);
+        document.getElementById('speed-display').innerText = currentSpeedPct + '%';
+        
+        const rageBar = document.getElementById('rage-bar');
+        if (window.innerWidth <= 600) {
+            rageBar.style.width = rage + '%';
+            rageBar.style.height = '100%';
+        } else {
+            rageBar.style.height = rage + '%';
+            rageBar.style.width = '100%';
+        }
+    }
+
+    function update(time = 0) {
+        const deltaTime = time - lastTime;
+        lastTime = time;
+        dropCounter += deltaTime;
+        if (dropCounter > dropInterval) playerDrop();
+        
+        draw();
+        requestAnimationFrame(update);
+    }
+
+    document.addEventListener('keydown', event => {
+        if (event.keyCode === 37) playerMove(-1);      
+        else if (event.keyCode === 39) playerMove(1);  
+        else if (event.keyCode === 40) playerDrop();   
+        else if (event.keyCode === 38) playerRotate(1);
+        else if (event.keyCode === 32) {               
+            event.preventDefault(); 
+            triggerNuke();
+        }
+    });
+
+    const bindTouch = (id, action) => {
+        const btn = document.getElementById(id);
+        btn.addEventListener('touchstart', (e) => { e.preventDefault(); action(); }, {passive: false});
+    };
+    bindTouch('btn-left', () => playerMove(-1));
+    bindTouch('btn-right', () => playerMove(1));
+    bindTouch('btn-down', () => playerDrop());
+    bindTouch('btn-rotate', () => playerRotate(1));
+
+    window.addEventListener('resize', updateUI);
+
+    spawnPiece();
+    update();
+</script>
+
+</body>
+</html>
